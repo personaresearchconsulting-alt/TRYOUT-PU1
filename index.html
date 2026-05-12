@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TRYOUT SIMULASI CAT PU</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:
+linear-gradient(135deg,#07152d,#0b2447,#19376d);
+min-height:100vh;
+overflow-x:hidden;
+color:white;
+}
+
+.hidden{
+display:none !important;
+}
+
+#loadingScreen{
+position:fixed;
+inset:0;
+background:#07152d;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:99999;
+}
+
+.loader{
+width:70px;
+height:70px;
+border-radius:50%;
+border:6px solid rgba(255,255,255,.2);
+border-top:6px solid white;
+animation:spin 1s linear infinite;
+margin-bottom:20px;
+}
+
+@keyframes spin{
+100%{
+transform:rotate(360deg);
+}
+}
+
+.center-page{
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px;
+}
+
+.glass{
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(15px);
+border:1px solid rgba(255,255,255,.15);
+box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+
+.login-card{
+width:100%;
+max-width:450px;
+padding:40px;
+border-radius:25px;
+text-align:center;
+animation:fade .8s ease;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+transform:translateY(30px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+.login-card h1{
+font-size:28px;
+margin-bottom:12px;
+}
+
+.subtitle{
+opacity:.8;
+margin-bottom:30px;
+}
+
+input{
+width:100%;
+padding:15px;
+border:none;
+outline:none;
+border-radius:14px;
+margin-bottom:20px;
+font-size:15px;
+}
+
+button{
+border:none;
+cursor:pointer;
+transition:.3s;
+}
+
+.login-btn{
+width:100%;
+padding:15px;
+background:#2196f3;
+color:white;
+border-radius:14px;
+font-size:16px;
+font-weight:600;
+}
+
+.login-btn:hover{
+transform:translateY(-4px);
+background:#42a5f5;
+}
+
+#dashboard{
+padding:30px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:20px;
+flex-wrap:wrap;
+margin-bottom:30px;
+}
+
+.top-right{
+display:flex;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+}
+
+.count-box{
+padding:15px 20px;
+border-radius:15px;
+background:rgba(255,255,255,.08);
+font-weight:600;
+}
+
+.logout-btn{
+padding:14px 20px;
+background:#f44336;
+color:white;
+border-radius:12px;
+}
+
+.logout-btn:hover{
+transform:translateY(-3px);
+}
+
+.menu-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+}
+
+.menu-card{
+padding:35px 20px;
+border-radius:22px;
+text-align:center;
+font-weight:600;
+font-size:17px;
+cursor:pointer;
+transition:.3s;
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(14px);
+border:1px solid rgba(255,255,255,.1);
+}
+
+.menu-card:hover{
+transform:translateY(-7px) scale(1.02);
+background:rgba(255,255,255,.14);
+}
+
+.popup{
+position:fixed;
+top:30px;
+right:30px;
+background:#0f172a;
+padding:18px 24px;
+border-left:5px solid #2196f3;
+border-radius:14px;
+z-index:9999;
+animation:slide .4s ease;
+}
+
+@keyframes slide{
+from{
+opacity:0;
+transform:translateX(100px);
+}
+to{
+opacity:1;
+transform:translateX(0);
+}
+}
+
+.admin-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px;
+}
+
+.back-btn{
+padding:12px 18px;
+background:#f44336;
+color:white;
+border-radius:12px;
+}
+
+.export-btn{
+padding:12px 18px;
+background:#2196f3;
+color:white;
+border-radius:12px;
+}
+
+.admin-wrap{
+padding:20px;
+}
+
+.admin-card{
+padding:20px;
+border-radius:20px;
+overflow:auto;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:14px;
+border-bottom:1px solid rgba(255,255,255,.15);
+font-size:14px;
+text-align:left;
+}
+
+footer{
+text-align:center;
+padding:30px;
+opacity:.7;
+}
+
+@media(max-width:768px){
+
+.login-card{
+padding:30px 20px;
+}
+
+.login-card h1{
+font-size:22px;
+}
+
+.topbar{
+flex-direction:column;
+align-items:flex-start;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+<div class="loader"></div>
+<h2>Loading Tryout System...</h2>
+</div>
+
+<section id="loginPage" class="center-page">
+
+<div class="glass login-card">
+
+<h1>TRYOUT SIMULASI CAT PU</h1>
+
+<p class="subtitle">
+PERSONA RESEARCH & CONSULTING
+</p>
+
+<input type="password" id="passwordInput" placeholder="Masukkan Password">
+
+<button class="login-btn" id="loginBtn">
+LOGIN
+</button>
+
+</div>
+
+</section>
+
+<section id="dashboard" class="hidden">
+
+<div class="topbar">
+
+<div>
+<h2>TRYOUT MENU</h2>
+<p id="welcomeText"></p>
+</div>
+
+<div class="top-right">
+
+<div class="count-box" id="countdown">
+Loading...
+</div>
+
+<button class="logout-btn" id="logoutBtn">
+Logout
+</button>
+
+</div>
+
+</div>
+
+<div class="menu-grid">
+
+<div class="menu-card" data-link="pu_2_fix.html">PENGETAHUAN UMUM</div>
+
+</div>
+
+</section>
+
+<div id="popup" class="popup hidden"></div>
+
+<footer>
+© PERSONA RESEARCH & CONSULTING
+</footer>
+
+<script>
+
+//////////////////////////////////////////////////
+// PASSWORD LIST
+//////////////////////////////////////////////////
+
+const passwordList = [
+"prcA72K",
+"prcM91Q",
+"prcX4LP",
+"prcZ81N",
+"prcQ7RT",
+"prcB83X",
+"prcL29V",
+"prcT64P",
+"prcY71K",
+"prcF55N",
+"prcD92Q",
+"prcR38M",
+"prcH74X",
+"prcJ61P",
+"prcW27L",
+"prcC84T",
+"prcN53K",
+"prcU19X",
+"prcE67R",
+"prcP41V",
+"prcG88M",
+"prcS25Q",
+"prcK73N",
+"prcV90L",
+"prcI36X",
+"prcO52P",
+"prcAA7K",
+"prcBB9Q",
+"prcCC4L",
+"prcDD8N",
+"prcEE2X",
+"prcFF6R",
+"prcGG1P",
+"prcHH5V",
+"prcJJ7M",
+"prcKK3T",
+"prcLL9X",
+"prcMM4K",
+"prcNN8Q",
+"prcPP2L",
+"prcQQ6N",
+"prcRR1X",
+"prcSS5R",
+"prcTT7P",
+"prcUU3V",
+"prcVV9M",
+"prcWW4T",
+"prcXX8K",
+"prcYY2Q",
+"prcZZ6L"
+];
+
+let accountData =
+JSON.parse(localStorage.getItem("accountData")) || {};
+
+const loginBtn =
+document.getElementById("loginBtn");
+
+const passwordInput =
+document.getElementById("passwordInput");
+
+const loginPage =
+document.getElementById("loginPage");
+
+const dashboard =
+document.getElementById("dashboard");
+
+const popup =
+document.getElementById("popup");
+
+const welcomeText =
+document.getElementById("welcomeText");
+
+const countdown =
+document.getElementById("countdown");
+
+window.onload = () => {
+
+setTimeout(() => {
+
+document.getElementById("loadingScreen")
+.style.display = "none";
+
+},1500);
+
+};
+
+//////////////////////////////////////////////////
+// DEVICE LOCK FINGERPRINT
+//////////////////////////////////////////////////
+
+function getDeviceId(){
+
+const rawData = [
+
+navigator.userAgent,
+navigator.platform,
+navigator.language,
+
+screen.width,
+screen.height,
+
+window.devicePixelRatio,
+
+Intl.DateTimeFormat()
+.resolvedOptions()
+.timeZone,
+
+navigator.hardwareConcurrency || "cpu",
+
+navigator.maxTouchPoints || "touch"
+
+].join("###");
+
+return generateHash(rawData);
+
+}
+
+function generateHash(str){
+
+let hash = 0;
+
+for(let i = 0; i < str.length; i++){
+
+hash =
+((hash << 5) - hash)
++ str.charCodeAt(i);
+
+hash |= 0;
+
+}
+
+return "PRC-" + Math.abs(hash);
+
+}
+
+function showPopup(text){
+
+popup.innerText = text;
+
+popup.classList.remove("hidden");
+
+setTimeout(() => {
+
+popup.classList.add("hidden");
+
+},3000);
+
+}
+
+loginBtn.addEventListener("click", loginSystem);
+
+function loginSystem(){
+
+const input = passwordInput.value.trim();
+
+if(!passwordList.includes(input)){
+
+showPopup("Password salah.");
+
+return;
+
+}
+
+const deviceId = getDeviceId();
+
+if(!accountData[input]){
+
+accountData[input] = {
+
+deviceId:deviceId,
+firstLogin:Date.now()
+
+};
+
+saveData();
+
+}
+
+if(accountData[input].deviceId !== deviceId){
+
+showPopup("Password sudah digunakan di perangkat lain.");
+
+return;
+
+}
+
+const expired =
+accountData[input].firstLogin +
+(30 * 24 * 60 * 60 * 1000);
+
+if(Date.now() > expired){
+
+showPopup("Masa aktif akun telah habis.");
+
+return;
+
+}
+
+localStorage.setItem("loggedInUser",input);
+
+showPopup("Login berhasil.");
+
+openDashboard(input);
+
+}
+
+function saveData(){
+
+localStorage.setItem(
+"accountData",
+JSON.stringify(accountData)
+);
+
+}
+
+function openDashboard(user){
+
+loginPage.classList.add("hidden");
+
+dashboard.classList.remove("hidden");
+
+welcomeText.innerHTML =
+`Login sebagai: <b>${user}</b>`;
+
+startCountdown(user);
+
+}
+
+function startCountdown(user){
+
+setInterval(()=>{
+
+const data = accountData[user];
+
+const end =
+data.firstLogin +
+(30 * 24 * 60 * 60 * 1000);
+
+const diff = end - Date.now();
+
+if(diff <= 0){
+
+countdown.innerText = "Expired";
+
+return;
+
+}
+
+const days =
+Math.floor(diff / (1000*60*60*24));
+
+const hours =
+Math.floor((diff/(1000*60*60))%24);
+
+const minutes =
+Math.floor((diff/(1000*60))%60);
+
+countdown.innerText =
+`${days}H ${hours}J ${minutes}M`;
+
+},1000);
+
+}
+
+const loggedUser =
+localStorage.getItem("loggedInUser");
+
+if(loggedUser){
+
+if(accountData[loggedUser]){
+
+const end =
+accountData[loggedUser].firstLogin +
+(30*24*60*60*1000);
+
+if(Date.now() < end){
+
+openDashboard(loggedUser);
+
+}
+
+}
+
+}
+
+document.getElementById("logoutBtn")
+.addEventListener("click",()=>{
+
+localStorage.removeItem("loggedInUser");
+
+location.reload();
+
+});
+
+document.addEventListener("contextmenu",e=>{
+e.preventDefault();
+});
+
+document.addEventListener("keydown",(e)=>{
+
+if(e.key==="F12"){
+e.preventDefault();
+}
+
+if(e.ctrlKey && e.shiftKey && e.key==="I"){
+e.preventDefault();
+}
+
+if(e.ctrlKey && e.key==="u"){
+e.preventDefault();
+}
+
+});
+
+document.querySelectorAll(".menu-card")
+.forEach(card=>{
+
+card.addEventListener("click",()=>{
+
+const target =
+card.getAttribute("data-link");
+
+window.location.href = target;
+
+});
+
+});
+
+</script>
+
+</body>
+</html>

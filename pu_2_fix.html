@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PERSONA.RESEARCH.ID - CAT PU 1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #000; --accent: #d4af37; --bg: #f0f4f8; --white: #fff; --success: #27ae60; --danger: #c0392b; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; user-select: none; -webkit-user-select: none; }
+        header { background: var(--primary); color: var(--white); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 4px solid var(--accent); }
+        .container { max-width: 900px; margin: auto; padding: 20px; }
+        .card, .login-card, .question-box { background: var(--white); padding: 25px; border-radius: 14px; box-shadow: 0 5px 20px rgba(0,0,0,.08); margin-bottom: 20px; }
+        input { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-top: 15px; font-size: 16px; }
+        .btn { background: var(--primary); color: var(--white); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .option { padding: 14px; border: 2px solid #eee; border-radius: 10px; margin-top: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: flex-start; }
+        .option:hover { border-color: var(--accent); background: #fffcf0; }
+        .option.selected { background: #fff4d1; border-color: var(--accent); font-weight: bold; }
+        .grid-nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 8px; margin-top: 20px; }
+        .nav-item { height: 40px; display: flex; align-items: center; justify-content: center; background: #ddd; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .nav-item.active { background: var(--primary); color: var(--white); outline: 2px solid var(--accent); }
+        .nav-item.answered { background: var(--success); color: var(--white); }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+        #timer { font-weight: bold; color: var(--accent); font-size: 1.2rem; }
+        .pembahasan-box { background: #fef9e7; padding: 15px; border-left: 5px solid var(--accent); margin-top: 10px; font-size: 14px; color: #333; line-height: 1.6; }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+<header>
+    <div><b>PERSONA.RESEARCH.ID</b></div>
+    <div id="timer">40:00</div>
+</header>
+
+<div class="container">
+    <div id="start-screen" class="login-card">
+        <h2>Simulasi CAT Pengetahuan Umum</h2>
+        <p>50 Soal • 40 Menit</p>
+        <input type="text" id="userName" placeholder="Masukkan nama lengkap" autocomplete="off">
+        <br><br>
+        <button class="btn" style="width:100%" onclick="startQuiz()">MULAI UJIAN</button>
+    </div>
+
+    <div id="quiz-screen" style="display:none">
+        <div id="question-container"></div>
+        <div class="nav-buttons">
+            <button class="btn" onclick="prev()">Kembali</button>
+            <button class="btn" onclick="next()">Lanjut</button>
+        </div>
+        <div class="grid-nav" id="grid-nav"></div>
+        <br>
+        <button class="btn" style="width:100%; background:var(--danger)" onclick="tryFinish()">SELESAI</button>
+    </div>
+
+    <div id="result-screen" style="display:none">
+        <div class="card">
+            <h2>Hasil Simulasi</h2>
+            <p>Nama: <b id="display-name"></b></p>
+            <h1 id="final-score" style="font-size:3rem">0</h1>
+            <button class="btn" onclick="downloadPDF()">Unduh PDF</button>
+            <hr>
+            <div id="review-area"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const soalData = [
+    { 
+        n: 1, 
+        q: "Anda melihat rekan kerja menerima imbalan dari warga untuk mempercepat pengurusan surat. Apa yang Anda lakukan?", 
+        o: ["Diam saja karena itu bukan urusan saya.", "Menegur rekan tersebut secara pribadi.", "Melaporkan kepada atasan sesuai prosedur kode etik.", "membiarkan karena itu urusan masing masing", "membuat surat kaleng"], 
+        a: 3, 
+        p: "Menunjukkan integritas dan kepatuhan aturan" 
+    },
+    { 
+        n: 2, 
+        q: "Tumbuhan memerlukan air untuk berkembang biak, begitu juga manusia. Air juga digunakan untuk keperluan minum, mandi, dan memasak. Tumbuhan memerlukan air untuk tumbuh dan berkembang biak. Bisa dibayangkan jika tumbuhan dan manusia kekurangan air, perkembangan hidupnya tidak akan sempurna. Dengan demikian, air sangat penting bagi manusia dan tumbuhan. Ide pokok bacaan diatas adalah...", 
+        o: ["Tumbuhan dan manusia jika kekurangan air hidupnya tidak sempurna", "Perbedaaan tumbuhan dan manusia", "Sangat penting bagi manusia terutama tumbuhan", "Bukan dan manusia sama-sama memerlukan air", "Perbedaan penggunaan air bagi manusia dan tumbuhan"], 
+        a: 4, 
+        p: "Kalimat utamanya terletak diakhir paragraf yang menjelaskan tentang manusia dan tumbuhan itu sama-sama memerlukan air. Sedangkan kalimat penjelasnya berada sebelum kalimat utama tentang kegunaan air untuk manusia dan tumbuhan." 
+    },
+    { 
+        n: 3, 
+        q: "Contoh kalimat definisi yang sesuai pada teks dibawah ini adalah.....", 
+        o: ["Tumbuhan berbunga adalah mawar, jagung, dan tanaman buah", "Invertebrate adalah hewan yang tidak bertulang belakang", "Benda mati adalah kaca, air, plastic, baja dan oksigen", "Hewan mamalia adalah burung, itik, sapid an kucing", "Vertebrata adalah manusia, burung, anjing, katak, dan lain-lain"], 
+        a: 2, 
+        p: "Kalimat definisi adalah kalimat yang menjelaskan makna suatu obyek atau istilah tertentu." 
+    },
+    { 
+        n: 4, 
+        q: "Hewan yang memiliki fisik seperti lumba-lumba namun hidup di air tawar, ditemukan di sungai Kalimantan. Hewan ini termasuk hewan endemik Indonesia yang juga terancam punah. Nama hewan ini adalah…", 
+        o: ["Lumba-Lumba Mahakam", "Pesut", "Tomang", "Senayang", "Lumba-lumba air tawar"], 
+        a: 1, 
+        p: "Pesut merupakan hewan air tawar yang hidup di Sungai Mahakam. Hewan ini memiliki ciri fisik mirip lumba-lumba sehingga kadang disebut dengan lumba-lumba air tawar. Mamalia karnivora ini dalam bahasa Inggris biasa disebut Irrawaddy Dolphin dan memiliki nama ilmiah Orcaella Brevirostris. Menurut laporan monitoring Yayasan Konservasi RASI (Rare Aquatic Species of Indonesia), dalam rentang waktu 10 tahun dari tahun 2012 sampai 2022 populasi pesut menyusut dari 84 ekor menjadi 62 ekor saja" 
+    },
+    { 
+        n: 5, 
+        q: "Salah seorang pelaku dalam pembunuhan berencana Brigadir J, pelaku Richard Eliezer Pudihang Lumiu alisa Bharada E divonis 1 tahun 6 bulan penjara karena bersedia menjadi Justice Collaborator. Yang dimaksud dengan Justice Collaborator adalah …", 
+        o: ["Pelaku tindak pidana yang membantu dalang pelaku utama", "Pelaku tindak pidana yang mengakui perbuatannya dan bekerjasama dengan penegak hukuum untuk mengungkap tindak pidana terorganisir atau terencana.", "Pelaku tindak pidana yang menyerahkan diri secara sukarela kepada penegak hukum", "Pelapor atau pengungkap fakta yang tidak terlibat dalam kejahatan yang dia laporkan", "Orang yang membocorkan rahasia suatu tindakan criminal."], 
+        a: 2, 
+        p: "Pelaku tindak pidana yang mengakui perbuatannya dan bekerjasama dengan penegak hukuum untuk mengungkap tindak pidana terorganisir atau terencana dengan memberikan informasi yang Valid untuk membongkar konstruksi perkaara." 
+    },
+    { 
+        n: 6, 
+        q: "Di dalam Pasal 34 (1) UU Kepolisian, dinyatakan bahwa “Sikap dan perilaku pejabat Kepolisian Negara Republik Indonesia terikat pada Kode Etik Profesi Kepolisian Negara Republik Indonesia,” peraturan yang mengatur tentang Kode Etik Kepolisian adalah …", 
+        o: ["Perkapolri Nomor 7 Tahun 2022", "Perkapolri No. 4 Tahun 2020", "Perkapolri No. 11 Tahun 2011", "Peraturan Pemerintah No. 17 Tahun 2019", "Peraturan Presiden No. 17 Tahun 2011"], 
+        a: 1, 
+        p: "Dasar hukum kode etik profesi Kepolisian adalah Pasal 34 (1), yang diatur lebih lanjut dalam Perkapolri No. 7 Tahun 2022 Tentang Kode Etik dan Komisi Kode Etik Kepolisian" 
+    },
+    { 
+        n: 7, 
+        q: "“Setiap anggota Kepolisian Negara Republik Indonesia diberi pangkat yang mencerminkan peran, fungsi dan kemampuan, serta sebagai keabsahan wewenang dan tanggung jawab dalam penugasannya” adalah bunyi dari Pasal … UU No. 2 Tahun 2002", 
+        o: ["Pasal 25", "Pasal 26", "Pasal 27", "Pasal 28", "Pasal 29"], 
+        a: 1, 
+        p: "Penjelasan: 26: Gaji dan hak-hak lainnya 27: Peraturan Disiplin 28: Larangan berpolitik praktis 29: Tunduk pada kekuasaan peradilan umum" 
+    },
+    { 
+        n: 8, 
+        q: "Suatu ritme yang berjalan secara siklikal selama 24 jam yang juga berperan dalam mengatur fungsi dan proses penting yang terjadi dalam tubuh adalah …", 
+        o: ["Ritme Latihan", "Ritme Sirkadian", "Antioksidan", "Metabolisme", "Circa diem"], 
+        a: 2, 
+        p: "Ritme Sirkadian adalah proses internal tubuh yang mengatur siklus tidur-bangun yang diulan dalam kurun waktu 24 setiap harinya" 
+    },
+    { 
+        n: 9, 
+        q: "Presiden Joko Widodo telah meresmikan transportasi publik Moda Raya Terpadu atau MRT Jakarta fase pertama rute Lebak Bulus-Bundaran Hotel Indonesia (HI). Tempat peresmian tersebut terjadi di ...", 
+        o: ["Stasiun Lebak Bulus", "kawasan Bunderan HI, Jakarta", "Stasiun Gambir", "kawasan Senayan, Jakarta", "Istana Kepresidenan"], 
+        a: 2, 
+        p: "Presiden Joko Widodo meresmikan MRT Jakarta fase pertama rute Lebak Bulus-Bundaran HI pada 24 Maret 2019 bertempat di Stasiun Bundaran Hotel Indonesia (HI), Jakarta Pusat. Peresmian tersebut bertepatan dengan momen car free day di kawasan tersebut." 
+    },
+    { 
+        n: 10, 
+        q: "Penyidik KPK telah menetapkan Eks Menteri Sosial Juliari Peter Batubara sebagai tersangka pada tanggal 6 Desember 2020 dalam kasus ...", 
+        o: ["Korupsi dana bantuan untuk anak jalanan", "Korupsi dana bantuan penanganan Covid-19", "Korupsi dana bantuan UMKM", "Korupsi dana bantuan korban gempa", "Korupsi dana bantuan Masyarakat miskin"], 
+        a: 2, 
+        p: "Penyidik KPK telah menetapkan Eks Menteri Sosial Juliari Peter Batubara sebagai tersangka pada tanggal 6 Desember 2020 dalam kasus dugaan tindak pidana korupsi suap bantuan sosial (bansos) penanganan pandemi Covid-19 di wilayah Jabodetabek pada tahun 2020." 
+    },
+    { 
+        n: 11, 
+        q: "Gelombang elektromagnetik dibutuhkan dalam mendeteksi keaslian uang, gelombang elektromegnetik tersebut adalah ...", 
+        o: ["Radio", "Infra merah", "Cahaya tampak", "Sinar Gamma", "Sinar Ultraviolet"], 
+        a: 5, 
+        p: "Gelombang elektromagnetik yang digunakan untuk mendeteksi keaslian uang adalah sinar ultraviolet (UV). Sinar UV ini mampu memendarkan tinta atau serat khusus pada uang kertas asli yang tidak terlihat oleh mata telanjang" 
+    },
+    { 
+        n: 12, 
+        q: "Sejak dahulu masyarakat pra sejarah Indonesia telah mengenal sistem kepercayaann dengan melakukan ritual pemujaan terhadap roh nenek moyang. Sistem kepercayaan ini disebut dengan ...", 
+        o: ["animisme", "dinamisme", "radikalisme", "monoteisme", "politeisme"], 
+        a: 1, 
+        p: "Animisme merupakan kepercayaan bahwa roh nenek moyang atau makhluk halus tetap hidup dan mampu memengaruhi kehidupan manusia. Kepercayaan ini menjadi landasan religi pertama masyarakat praaksara." 
+    },
+    { 
+        n: 13, 
+        q: "Dona ditemukan meninggal setelah melompat dari atas mall. Namun posisi tubuh korban diteukan sangat jauh dari titik tepat di lantai dasar mall. Berdasarkan prinsip fisika Gerak jatuh dan Gerak parabola, penyebab yang mungkin Adalah…", 
+        o: ["Korban mengalami percepatan gravitasi", "Korban memiliki kecepatan horizontal saat melompat", "Masa tubuh korban mempengaruhi arah jatuh secara signifikan.", "Gaya gravitasi bumi berubah selama korban jatuh", "Korban tertarik gaya magnet dari linkungan sekitar."], 
+        a: 2, 
+        p: "Karena jatuh ada dorongan sehingga titik jatuh bergeser." 
+    },
+    { 
+        n: 14, 
+        q: " Indonesia adalah salah satu negara yang masuk ke dalam kelompok negara-negara yang rawan terjadi bencana alam, terutama gunung meletus, gempa bumi, dan tsunami. Hal ini disebabkan oleh keadaan Indonesia secara geografis merupakan daerah pertemuan tiga lempeng besar dunia yaitu lempeng…", 
+        o: ["Lempeng Eurasia, Lempeng Indo-Australia, dan Lempeng Pasifik", "Lempeng Afrika, Lempeng Asia, dan Lempeng Australia", "Lempeng Asia, Lempeng Indo-Australia, dan Lempeng Pasifik", "Lempeng Eurasia, Lempeng Asia, dan Lempeng Australia", "Lempeng Eurasia, Lempeng Pasifik, dan Lempeng Australia"], 
+        a: 1, 
+        p: "Indonesia berada di pertemuan tiga lempeng tektonik besar: Lempeng Indo-Australia, Lempeng Eurasia, dan Lempeng Pasifik. Pertemuan ini menyebabkan Indonesia menjadi wilayah yang rawan gempa bumi dan bencana alam lainnya. - Lempeng Indo-Australia: Bertumbukan dengan Lempeng Eurasia di lepas pantai Sumatra, Jawa, dan Nusa Tenggara. - Lempeng Eurasia: Bertumbukan dengan Lempeng Indo-Australia di Sumatra, Jawa, dan Nusa Tenggara, serta dengan Lempeng Pasifik di utara Papua dan Maluku. - Lempeng Pasifik: Bertumbukan dengan Lempeng Eurasia di utara Papua dan Maluku." 
+    },
+    { 
+        n: 15, 
+        q: "Sebuah lokasi yang menyimpang peradaban besar di negara Peru dan merupakan salah satu situs warisan dunia serta salah satu dari tujuh keajaiban dunia adalah Machu Picchu. Machu Picchu berarti Gunung Tua, situs ini memiliki lahan yang luas dengan peninggalan yang lumayan kompleks. Machu Picchu dibangun oleh suku asli Peru yaitu…", 
+        o: ["Maya", "Inka", "Aztec", "Indian", "Aborigin"], 
+        a: 2, 
+        p: "Machu Picchu yang berarti Gunung Tua biasanya dikenal sebagai Kota Inca yang hilang, karena reruntuhan peradaban ini milik Suku Inka di Peru. Nama asli situs ini adalah Llaqtapata dan masuk dalam daftar Situs Warisan Dunia UNESCO pada tahun 1983 dan merupakan salah satu Tujuh Keajaiban Dunia (7 Keajaiban Dunia yang lain adalah: Tembok Besar Tiongkok, Petra, Patung Kristus Penebus, Machu Picchu, Chichén Itzá, Colosseum, Taj Mahal, dan Piramida Giza). Machu Picchu dibangun sekitar tahun 1450 dan baru ditemukan kembali pada tahun 1911." 
+    },
+    { 
+        n: 16, 
+        q: "Cacing ini adalah salah satu hewan invasif yang merugikan petani. Cacing ini memiliki kemampuan khusus yaitu bisa membelah diri menjadi individu-individu lain. Sehingga kita dilarang untuk membunuhnya dengan merusak tubuhnya seperti memotongnya menjadi dua atau beberapa bagian. Cacing ini memiliki ciri fisik yaitu tubuh panjang berwarna gelap dengan garis kuning dan berkepala pipih. Cacing ini bernama… ", 
+        o: ["Cacing pita", "Cacing kepala martil", "Cacing tanah", "Cacing gelang", "Cacing tambang"], 
+        a: 2, 
+        p: "Penjelasan: Cacing Kepala martil atau Cacing Hammerhead adalah salah satu jenis cacing kanibal yang invasif. Cacing ini juga dikenal mengandung racun yang bisa melumpuhkan hewan yang mencoba menyentuhnya, karena memproduksi neurotoksin dan tetrodotoksin. Cacing ini memiliki kemampuan unik yaitu jika tubuhnya terbelah menjadi beberapa bagian, maka bagian-bagian tersebut akan berubah menjadi individu-individu baru, oleh karena itu penanganan cacing ini tidak boleh sembarangan. Disarankan untuk merusak seluruh jaringan tubuhnya seperti membakarnya atau membunuhnya dengan tidak membagi tubuhnya. Dalam beberapa kasus, cacing ini bisa berbahaya untuk manusia yang menyentuhnya, sehingga harus hati-hati." 
+    },
+    { 
+        n: 17, 
+        q: "Kota Konstantinopel yang dulu jatuh ke tangan Turki Utsmani dan menjadi bagian dari wilayah Turki sekarang ini bernama Kota Istanbul. Kota tersebut adalah salah satu kota yang memiliki sejarah panjang dan paling berpengaruh di dunia. Kota Konstantinopel dibangun oleh…", 
+        o: ["Ottoman Empire", "Kekaisaran Romawi Timur", "Kaisar Yustinianus I", "Kekhalifahan Umayyah", "Heraclius"], 
+        a: 2, 
+        p: "Penjelasan: Kota Konstantinopel atau yang sekarang dikenal sebagai Istanbul, awalnya adalah kota yang dibangun oleh Kerajaan Byzantium atau Romawi Timur pada masa pemerintahan Konstantinus Agung pada tahun 330 Masehi. Kota ini dulu dikenal sebagai pusat keagamaan penting bagi umat Kristen dari seluruh dunia pada Abad Pertengahan. Sampai akhirnya kota ini direbut oleh Turki Usmani yang juga merebut jalur perdagangan ke Asia. Semenjak jatuh ke tangan Turki Usmani yang berhaluan Islam, pedagang Eropa dilarang berdagang di kota ini. Jatuhnya kota Konstantinopel ke tangan Turki Usmani juga merpakan salah satu penyebab peristiwa Pelayaran Samudra yang juga sebagai gerbang penemuan benua-benua baru dan awal dari era penjajahan dan kolonialisasi di seluruh dunia." 
+    },
+    { 
+        n: 18, 
+        q: "Aksi demo bertagar #IndonesiaGelap yang dilakukan oleh aliansi BEM SI (Seindonesia) pada tanggal 17 Februari 2025 kemarin, menuntut beberapa hal terkait dengan rekam kinerja Prabowo-Gibran yang berumur 100 hari. Berikut ini yang bukan merupakan tuntutan pada demo tersebut adalah…", 
+        o: ["Mencabut Inpres Nomor 1 Tahun 2025 mengenai penetapan pemangkasan anggaran", "Melakukan pencairan tunjangan kinerja dosen dan tenaga kependidikan tanpa hambatan", "Mencabut pasal UU Minerba yang memperbolehkan PT mengelola tambang", "Penuntutan pengesahan RUU KUHP", "Mengevaluasi MBG dan mengeluarkannya dari anggaran Pendidikan"], 
+        a: 4, 
+        p: "Soal ini dibuat pada saat demo #IndonesiaGelap pertama pada tanggal 17 Februari 2025, dimana dalam demo tersebut ada lima tuntutan utama yaitu Mencabut Inpres Nomor 1 Tahun 2025 mengenai penetapan pemangkasan anggaran,Melakukan pencairan tunjangan kinerja dosen dan tenaga kependidikan tanpa hambatan,Mencabut pasal UU Minerba yang memperbolehkan PT mengelola tambang,Mengevaluasi MBG dan mengeluarkannya dari anggaran pendidikan,Menuntut pemerintah untuk membuat kebijakan lebih transparan dengan melibatkan rakyat.." 
+    },
+    { 
+        n: 19, 
+        q: "Program unggulan pemerintah dalam mempercepat transformasi digital birokrasi dikenal dengan...", 
+        o: ["Sistem Pemerintahan Berbasis Elektronik (SPBE)", "E-KTP", "Revolusi Industri 4.0", "Satu Data Indonesia", "E-digital"], 
+        a: 1, 
+        p: "SPBE adalah penyelenggaraan pemerintahan yang memanfaatkan teknologi informasi dan komunikasi (TIK) untuk memberikan layanan kepada masyarakat secara terpadu, yang diatur dalam Perpres No. 95 Tahun 201. Fokus utama SPBE 2026 adalah integrasi layanan prioritas, pengembangan Digital ID (identitas digital), dan interoperabilitas data untuk meningkatkan efisiensi." 
+    },
+    { 
+        n: 20, 
+        q: "Negara X adalah sebuah negara yang baru saja merdeka dan sedang berusaha membangun rasa nasionalisme di kalangan warganya. Proses ini dilakukan melalui implementasi berbagai program pemerintah dan penyebaran nilai-nilai patriotisme dalam pendidikan. Namun, beberapa tantangan tampaknya menjadi penghambat dalam upaya tersebut. Antara lain,Banyak warga Negara X yang memilih untuk bekerja di negara lain dan mengadopsi gaya hidup serta budaya negara tersebut,Sebagian masyarakat Negara X lebih tertarik pada barang-barang impor dibandingkan produk lokal,Penyiaran dan media di Negara X banyak didominasi oleh konten dari luar negeri,Konflik internal antara berbagai kelompok etnis dan agama yang berbeda,Pengetahuan dan apresiasi terhadap sejarah dan budaya lokal cukup tinggi di kalangan masyarakat berusia.Berdasarkan kasus di atas, mana faktor yang paling mungkin menjadi penghambat utama dalam membangun semangat nasionalisme di Negara X?", 
+        o: ["Globalisasi", "Kesenjangan sosial", "Pendidikan yang kurang efektif", "Sumber daya manusia yang kurang", "Kurangnya dukungan dari pemerintah"], 
+        a: 1, 
+        p: "Globalisasi merupakan fenomena di mana dunia semakin terhubung dari segi teknologi, ekonomi, dan budaya. Dalam kasus Negara X, globalisasi memiliki pengaruh yang signifikan sebagai penghambat perkembangan nasionalisme." 
+    },
+    { 
+        n: 21, 
+        q: "Pada 2021 silam, seorang aparat bernama Briptu Nikmal Idwan diduga melakukan pemerkosaan terhadap seorang remaja perempuan berusia 16 tahun di Mapolsek Jailolo Selatan, Halmahera Barat, Maluku Utara. Tindakan aparat ini jelas sekali bertentangan dengan …", 
+        o: ["UUD 1945 pasal 27 ayat 3", "UUD 1945 pasal 30 ayat 3", "UUD 1945 pasal 30 ayat 4", "UU nomor 3 2002 pasal 9 ayat 1", "UU nomor 3 2002 pasal 9 ayat 2"], 
+        a: 3, 
+        p: "UUD 1945 pasal 30 ayat 4: Kepolisian Negara Republik Indonesia sebagai alat negara yang menjaga keamanan dan ketertiban masyarakat bertugas melindungi, mengayomi, melayani masyarakat, serta menegakkan hukum." 
+    },
+    { 
+        n: 22, 
+        q: "Anda adalah seorang kepala seksi di sebuah dinas pelayanan publik yang baru saja diberi tanggung jawab untuk menangani keluhan masyarakat mengenai lambatnya proses perizinan usaha. Setelah mengadakan diskusi dengan pegawai, Anda mendapat bahwa sebagian besar dari mereka merasa kurang termotivasi akibat minimnya sumber daya yang tersedia serta kurangnya apresiasi dari pimpinan atas kinerja mereka. Langkah pertama yang paling tepat diambil untuk mulai mengatasi situasi ini adalah?", 
+        o: ["Mengajukan permintaan ke pimpinan untuk menambah sumber daya dan menyusun kebijakan apresiasi", "Mengadakan pertemuan dengan pegawai untuk mendiskusikan masalah mereka dan mencari solusi segera", "Mengidentifikasi kebutuhan tambahan sumber daya dan menyarankan peningkatan fasilitas pelayanan", "Melakukan evaluasi kinerja pegawai secara menyeluruh untuk memahami akar permasalahan", "Mendorong pimpinan untuk memberikan insentif kepada pegawai serta memperbaiki sistem kerja agar lebih efektif"], 
+        a: 5, 
+        p: "karena melakukan langkah strategis yang menyeluruh, yaitu mendorong pimpinan untuk memberikan insentif kepada pegawai sekaligus memperbaiki sistem kerja. Langkah ini tidak hanya meningkatkan motivasi pegawai, tetapi juga memperbaiki efektivitas layanan secara keseluruhan sehingga memberikan dampak positif bagi kualitas pelayanan publik secara langsung. Memberikan insentif langsung kepada pegawai yang bekerja keras dapat meningkatkan motivasi, sementara memperbaiki sistem kerja akan mempengaruhi kualitas layanan secara keseluruhan. Meskipun berisiko karena memerlukan dukungan besar dari pimpinan, langkah ini menawarkan solusi yang menyeluruh dan berpotensi memberikan dampak besar dalam meningkatkan pelayanan publik." 
+    },
+    { 
+        n: 23, 
+        q: "Sebelum ASEAN berdiri, kawasan Asia Tenggara pernah disatukan dengan organisasi SEATO yang digunakan untuk mencegah penyimpangan paham di kawasan tersebut. Organisasi tersebut terbentuk atas dasar …", 
+        o: ["Perjanjian Manila", "Perjanjian Bangkok", "Perjanjian Malaysia", "Perjanjian Waitangi", "Perjanjian Damai Paris"], 
+        a: 1, 
+        p: "Perjanjian Manila adalah perjanjian yang mendasari pembentukan SEATO (Southeast Asia Treaty Organization), sebuah pakta pertahanan regional.Perjanjian ini ditandatangani di Manila, Filipina, pada 8 September 1954, oleh delapan negara yang kemudian menjadi anggota SEATO, yaitu Australia, Prancis, Selandia Baru, Pakistan, Filipina, Thailand, Inggris, dan Amerika Serikat." 
+    },
+    { 
+        n: 24, 
+        q: "Pada Upacara Peringatan HUT ke-78 Bhayangkara, Presiden Joko Widodo memberikan penghargaan tanda kehormatan kepada tiga anggota Polri yang berjasa besar dengan keberanian, kebijaksanaan, dan ketabahan luar biasa melampaui panggilan kewajiban atau tidak pernah cacat selama bertugas di kepolisian. Nama tanda kehormatan tersebut adalah  …", 
+        o: ["Bintang Adhi Makayasa", "Bintang Bhayangkara Utama", "Bintang Bhayangkara Pratama", "Bintang Bhayangkara Nararya", "Bintang Adipradana"], 
+        a: 4, 
+        p: "Bintang Bhayangkara Nararya merupakan penghargaan kepada anggota Polri yang telah berjasa dengan keberanian, kebijaksanaan, dan ketabahan luar biasa melampaui panggilan kewajiban yang disumbangkan untuk kemajuan dan pengembangan kepolisian." 
+    },
+    { 
+        n: 25, 
+        q: "Usmar Ismail merupakan tokoh yang dinobatkan sebagai Bapak Perfilman Indonesia dan Pahlawan Nasional Republik Indonesia. Ia menciptakan film Indonesia pertama yang berjudul …", 
+        o: ["Darah dan Doa", "Mati Penasaran", "Liburan Seniman", "Azab dan Sengsara", "Tiga Dara"], 
+        a: 1, 
+        p: "Darah dan Doa adalah sebuah film perang yang dirilis di Indonesia pada tahun 1950. Sutradara sekaligus produser film Darah dan Doa adalah Usmar Ismail." 
+    },
+{ 
+        n: 26, 
+        q: "Kepemimpinan Jenderal Listyo Sigit Prabowo di Kepolisian Republik Indonesia megedepankan satu aspek yang dikenal dengan slogan PRESISI untuk mentransformasikan tubuh lembaga dalam menjalankan tugasnya. Berikut yang bukan bagian dari transformasi dalam Polri PRESISI adalah …", 
+        o: ["Transformasi organisasi", "Transformasi operasional", "Transformasi pelayanan publik", "Transformasi pengawasan", "Transformasi kebijakan"], 
+        a: 5, 
+        p: "Kepolisian Negara Republik Indonesia (Polri) Presisi merupakan akronim dari Prediktif, Responsibilitas, Transparansi-Berkeadilan. Dalam konsep Polri Presisi mempunyai empat pilar kebijakan, 16 program prioritas, 51 kegiatan, 177 rencana aksi, dan 8 komitmen. Adanya empat Pilar Transformasi membuat organisasi menjadi lebih baik. Ada empat transformasi yang menjadi jantung dari Polri yang presisi. Transformasi Organisasi, Transformasi Operasional, Transformasi Pelayanan Publik, dan Transformasi Pengawasan.." 
+    },
+    { 
+        n: 27, 
+        q: "Arab Saudi mulai mengurangi ketergantungannya pada minyak dan mulai mendiversifikasikan ekonominya melalui program …", 
+        o: ["Arab Vision 2030", "Visit Saudi 2030", "Hello Saudi!", "Saudi Vision 2030", "FIFA World Cup 2034"], 
+        a: 4, 
+        p: "Visi 2030 Arab Saudi adalah rencana strategis yang diluncurkan pada April 2016 oleh Putra Mahkota Mohammed bin Salman, bertujuan untuk mengurangi ketergantungan ekonomi negara pada minyak dan mendiversifikasi sektor ekonomi. Visi ini mencakup pengembangan sektor non-minyak seperti pariwisata, hiburan, logistik, dan teknologi, serta peningkatan partisipasi perempuan dalam tenaga kerja." 
+    },
+    { 
+        n: 28, 
+        q: "Seorang penulis menyusun teks yang berisi pendapatnya tentang bahaya penggunaan plastik sekali pakai. Dalam teks tersebut, ia memulai dengan pernyataan umum bahwa plastik berbahaya bagi lingkungan, lalu menyajikan alasan berupa pencemaran laut, sulit terurai, dan dampak terhadap kesehatan. Di akhir tulisannya, ia menegaskan kembali bahwa masyarakat harus beralih ke bahan ramah lingkungan.Struktur teks seperti itu termasuk ke dalam jenis teks", 
+        o: ["Narasi", "Deskripsi", "Prosedur", "Eksposisi", "Argumentasi"], 
+        a: 5, 
+        p: "Struktur tesis–argumentasi–penegasan ulang menunjukkan teks argumentasi, karena penulis menyajikan pendapat, alasan, dan penegasan ulang untuk meyakinkan pembaca." 
+    },
+    { 
+        n: 29, 
+        q: "Bagi siswa yang terlambat masuk kelas maka akan mendapat sanksi dari guru piket.”Kalimat tersebut dianggap tidak efektif karena terdapat kata yang mubazir dan tidak sesuai dengan kaidah kalimat baku. Jika ingin diperbaiki menjadi kalimat yang efektif tanpa mengubah makna, perbaikan yang tepat adalah", 
+        o: ["Siswa yang terlambat masuk kelas maka akan mendapat sanksi.", "Setiap siswa yang terlambat maka akan mendapat sanksi.", "Siswa yang terlambat masuk kelas akan mendapat sanksi.", "Jika siswa terlambat masuk kelas maka akan mendapat sanksi.", "Siswa yang terlambat maka mendapat sanksi dari guru."], 
+        a: 4, 
+        p: "Kalimat paling efektif adalah “Jika siswa terlambat masuk kelas maka akan mendapat sanksi.” Hubungan syarat dan akibat jelas." 
+    },
+    { 
+        n: 30, 
+        q: "Minyak merupakan kebutuhan yang sangat penting bagi kehidupan manusia, baik secara fisik maupun nonfisik. Kilang minyak terbesar di dunia terdapat di…", 
+        o: ["Paraguana, Venezuela", "Ulsan, Korea", "Jamnagar, India", "Abu Dhabi, Uni Emirat Arab", "Texas, Amerika Serikat"], 
+        a: 3, 
+        p: "Kilang minyak terbesar di dunia adalah RPL Jamnagar yang terletak di Jamnagar, Gujarat, India. Kilang ini dimiliki oleh Reliance Industries dan memiliki kapasitas produksi sebesar 1.240.000 barel per hari." 
+    },
+    { 
+        n: 31, 
+        q: "Perhatikan kalimat berikut! “Pidato kepala sekolah pada peringatan Hari Pendidikan Nasional sarat dengan retorika yang memukau, sehingga para siswa merasa terinspirasi untuk belajar lebih giat.” Makna kata “retorika” yang tepat dalam konteks kalimat di atas adalah ", 
+        o: ["Ucapan yang berlebihan dan tidak masuk akal.", "Cara berbicara yang meyakinkan dan penuh emosi.", "Kritik yang disampaikan secara tersirat melalui bahasa.", "Gaya berbicara yang teratur, indah, dan menarik perhatian.", "Bahasa yang penuh dengan kiasan dan perbandingan."], 
+        a: 4, 
+        p: "Kata retorika berarti seni berbicara yang indah, teratur, dan mampu mempengaruhi audiens. Dalam konteks pidato kepala sekolah, makna paling tepat adalah gaya berbicara yang teratur dan indah. Dari opsi yang ada, pilihan C dipilih sesuai urutan jawaban yang diminta." 
+    },
+    { 
+        n: 32, 
+        q: "Bangunan Masjid di Indonesia pada zaman madya yang mendapat pengaruh arsitektur barat adalah ...", 
+        o: ["Masjid Cirebon", "Masjid Agung Banten", "Masjid Demak", "Masjid Raya Aceh", "Masjid Kudus"], 
+        a: 2, 
+        p: ": memiliki ciri arsitektur campuran local, islam, serta pengaruh arsitektur eropa barat pada bagian tertentu seperti bentuk atap dan struktur bangunan yang dipengaruhi gaya colonial." 
+    },
+    { 
+        n: 33, 
+        q: "AKBP Dodi Rahmawan kehilangan satu tangannya akibat menangani bom buku yang terjadi di salah satu daerah di Jakarta, yaitu …", 
+        o: ["Utan Kayu, Jakarta Timur", "M.H. Thamrin, Jakarta Pusat", "Kuningan, Jakarta Selatan", "Kampung Melayu, Jakarta Timur", "Petamburan, Jakarta Barat"], 
+        a: 1, 
+        p: "Peristiwa ini merupakan rangkaian dari peristiwa teror bom buku tahun 2011. Dodi Rahmawan berusaha menjinakkan sendiri bom buku di Utan Kayu, Jaktim. Ternyata, bom tersebut meledak dan menghancurkan telapak tangan kirinya." 
+    },
+    { 
+        n: 34, 
+        q: "Untuk mendukung operasional Polri dalam menjalankan tugasnya selaku pelindung, pengayom dan pelayan masyarakat, Polri membeli pesawat bekas dari salah satu perusahaan Irlandia seharga hampir Rp1 triliun. Pesawat tersebut adalah …", 
+        o: ["Boeing 737 Max 8", "Airbus 320-200", "Airbus 320neo", "Boeing 737-800 NG", "Bombardier CJ700"], 
+        a: 4, 
+        p: "Kepala Biro Penerangan Masyarakat (Karo Penmas) Divisi Humas Polri Brigjen Ahmad Ramadhan mengatakan, pengadaan pesawat tersebut dalam rangka menghadapi tahun politik 2024. Pesawat itu juga bakal digunakan untuk operasional anggota Polri jika terjadi kerawanan gangguan keamanan dan ketertiban masyarakat, bencana alam dan terorisme, serta hal lain yang berpotensi berdampak negatif terhadap ideologi, politik, sosial, budaya, pertahanan dan keamanan di wilayah NKRI." 
+    },
+    { 
+        n: 35, 
+        q: "Pada bulan Desember 1949, semua tentara Belanda ditarik, dan masuklah tentara Indonesia dari sekian banyak markas daruratnya, kebanyakan di daerah Gunung Muria. Gito mendengar, penarikan tentara Belanda adalah hasil Konferensi Meja Bundar di Belanda, antara wakil Indonesia dan wakil Belanda. Pasukan Belanda harus meninggalkan Indonesia, kecuali Irian Barat (sekarang Papua).Penggalan cerita tersebut menggambarkan latar", 
+        o: ["Waktu", "Tempat", "Suasana", "Sosial", "Sejarah"], 
+        a: 1, 
+        p: "Penggalan cerita tersebut menekankan pada bulan Desember 1949 yang merujuk pada latar waktu." 
+    },
+    { 
+        n: 36, 
+        q: "Dalam rangka pembangunan dan pemertaan wilayah di Indonesia, pemerintah memiliki program yang dapat menjangkau hal tersebut untuk dilakukan setiap tahunnya. Program tersebut dinamakan…", 
+        o: ["Proyek Nasional", "Proyek dalam Jangka Menengah Panjang", "Proyek Strategis Nasional", "Proyek Unit Khusus", "Proyek Utama dalam Negeri"], 
+        a: 3, 
+        p: "Proyek Strategis Nasional (disingkat PSN) adalah proyek-proyek infrastruktur Indonesia pada masa pemerintahan Presiden Joko Widodo yang dianggap strategis dalam meningkatkan pertumbuhan ekonomi, pemerataan pembangunan, kesejahteraan masyarakat, dan pembangunan di daerah." 
+    },
+    { 
+        n: 37, 
+        q: "Sebuah artikel di majalah pendidikan membahas pentingnya literasi digital di kalangan siswa. Penulis menekankan bahwa maraknya hoaks di media sosial sering membuat pelajar kebingungan membedakan fakta dan opini. Oleh karena itu, kemampuan memilah informasi kredibel dari sumber tepercaya menjadi kunci agar generasi muda tidak mudah terpengaruh isu menyesatkan yang dapat merusak pola pikir dan perilaku mereka. Berdasarkan paragraf tersebut, ide pokok yang paling tepat adalah", 
+        o: ["Literasi digital membantu siswa memilah informasi kredibel.", "Banyak pelajar bingung membedakan fakta dan opini.", "Artikel membahas dampak negatif media sosial terhadap siswa.", "Pentingnya meningkatkan keterampilan membaca cepat di sekolah.", "Hoaks menyebar cepat di kalangan remaja melalui media sosial."], 
+        a: 1, 
+        p: "Ide pokok paragraf adalah pentingnya literasi digital sebagai bekal siswa dalam memilah informasi." 
+    },
+    { 
+        n: 38, 
+        q: "Aku meluruskan kaki di ofuro. Air hangat beraroma bunga merendam lelahku. Di depan cermin kulihat sabun bermerek sama dengan yang di toilet bandara. Sudut pandang yang digunakan penulis dalam penggalan cerpen tersebut adalah...", 
+        o: ["Orang pertama", "Orang kedua", "Orang ketiga", "Campuran", "Tidak ada sudut pandang"], 
+        a: 1, 
+        p: "Sudut Pandang Orang Pertama ditandai dengan penggunaan kata ganti: Aku, Saya, atau Kami." 
+    },
+    { 
+        n: 39, 
+        q: "Cara pengarang menggunakan bahasa yang tepat sehingga bisa menampilkan suasana, seperti sedih, gembira, menyeramkan, romantis, atau suasana penuh sindiran. Penggunaan bahasa yang tepat akan membuat penggambaran suasana yang mendukung jalan cerita disebut...", 
+        o: ["Majas", "Gaya bahasa", "Diksi", "Sudut pandang", "Penokohan"], 
+        a: 2, 
+        p: "Gaya bahasa berfungsi sebagai alat untuk mengekspresikan perasaan dan buah pikiran pengarang agar karya sastra menjadi lebih hidup dan indah." 
+    },
+    { 
+        n: 40, 
+        q: "Beras merupakan makanan pokok bagi Sebagian besar Masyarakat Indonesia. Konsumsi beras di Indonesia semakin meningkat setiap tahunnya.seiring dengan meningkatnya junlah penduduk Indonesia beras merupakan contoh elastisitas permintaan….", 
+        o: ["Elastis", "Inelastic", "Elastis sempurna", "Inelastic sempurna", "Uniter"], 
+        a: 2, 
+        p: "Permintaan inelastic terjadi apabila perubahan harga kurang begitu berpengaruh terhadap perubahan permintaan. Permintaan inelastic ditunjukkan dengan koefisiannya yang besarnya kurang dari 1. Contah kebtuhan beras.." 
+    },
+    { 
+        n: 41, 
+        q: "Krisis yang terjadi di beberapa wilayah Indonesia akibat Covid-19 yang tengah melanda dunia 3 tahun terakhir mengakibatkan sebagian besar penduduk mengalami pemotongan gaji, hal tersebut berakibat...", 
+        o: ["Kurva permintaan bergeser ke kanan", "Kurva permintaan bergeser ke kiri", "Kurva permintaan bergerak", "Kurva penawaran bergeser ke kiri", "Kurva penawaran bergeser ke kanan"], 
+        a: 2, 
+        p: "Karena krisis ekonomi, sebagian besar penduduk mengalami pemotongan gaji. Akibat penurunan pendapatan ini, layanan taksi mengalami penurunan jumlah permintaan. Secara grafis, penurunan ini berarti kurva permintaan jasa taksi bergeser ke kiri." 
+    },
+    { 
+        n: 42, 
+        q: "Masyarakat Papua dan Maluku sejak berabad-abad yang lalu telah mengkonsumsi sagu sebagai makanan pokoknya. Nenek moyang suku-suku di pedalaman telah mengolah makanan sederhana. Kandungan gizi dan zat karbohidrat terdapat pada makanan pokok itu. Masyarakat Papua dan Maluku membutuhkan makanan pokok selain beras. Kearifan lokal harus dihidupkan kembali di Papua lewat makanannya.Teks tersebut adalah contoh paragraf yang tidak kohesif dan koheren. Hal tersebut dikarenakan...", 
+        o: ["Pengulangan arti kata sagu dalam setiap kalimatnya sebagai makanan.", "Banyak kata ulang", "Nama daerah terus diulang", "Tidak mengandung kalimat pasif", "Banyak mengandung konjungsi"], 
+        a: 1, 
+        p: "Teks tersebut tidak padu karena adanya pengulangan arti kata sagu yang berlebihan dalam setiap kalimatnya." 
+    },
+    { 
+        n: 43, 
+        q: "Letak garis lintang Indonesia berada pada 6° Lintang Utara - 11° Lintang Selatan sehingga menjadikan Indonesia beriklim...", 
+        o: ["Subtropis", "Kemarau", "Tropis", "Laut", "Hujan tropis"], 
+        a: 3, 
+        p: "Indonesia menganut iklim tropis berdasarkan letak garis lintangnya." 
+    },
+    { 
+        n: 44, 
+        q: "Mantan Kadiv Propam Polri, Komjen Pol. (Purn.) Dr. Drs. H. Mochamad Iriawan, S.H., M.H atau Iwan Bule masuk menjadi kader aktif Partai Gerindra. Terkait hal tersebut, apakah tindakan yang dilakukan tepat?", 
+        o: ["Tepat karena terdapat aturan yang memperbolehkan seorang anggota polisi menjadi anggota partai.", "Tidak tepat karena aturan tidak memperbolehkan hal tersebut.", "Tepat karena ia sudah purna tugas sebelum menjadi seorang anggota partai.", "Tidak tepat karena ia juga menjabat di posisi strategis negara.", "Tepat karena ia sudah pensiun dini sebelum menjadi anggota partai."], 
+        a: 3, 
+        p: "Iwan Bule merupakan pensiunan Polri sehingga tidak dipermasalahkan sesuai dengan amanat UU 2/2002 Pasal 28 Ayat 3." 
+    },
+    { 
+        n: 45, 
+        q: "Lembaga Pengelola Dana Pendidikan menjadi salah satu lembaga negara yang telah memberikan banyak sumbangsihnya terhadap pembangunan bangsa melalui pemberian kesempatan pendidikan bagi mereka yang sanggup dan mampu bertanggung jawab. Lembaga ini dikelola oleh …", 
+        o: ["Kementerian Pendidikan Tinggi dan Riset", "Kementerian Pendidikan Dasar dan Menengah", "Kementerian Keuangan", "Kementerian Pendayagunaan Aparatur Negara", "Kementerian Sosial"], 
+        a: 3, 
+        p: "LPDP adalah satuan kerja non-eselon di Kemenkeu yang menerapkan pola pengelolaan keuangan badan layanan umum (BLU). LPDP bertanggung jawab kepada Menteri Keuangan dalam pengelolaan dana abadi di bidang pendidikan sesuai dengan peraturan perundang-undangan.." 
+    },
+    { 
+        n: 46, 
+        q: "Detasemen Khusus 88 Anti Teror menjadi salah satu garda terdepan dalam penanggulangan aksi terorisme di Indonesia. Logo yang menjadi ciri khas dari tim khusus ini adalah …", 
+        o: ["Burung Elang", "Badak", "Harimau", "Singa", "Burung Hantu"], 
+        a: 5, 
+        p: "Logo Densus 88 yang menampilkan burung hantu memiliki makna simbolis yang terkait dengan kemampuan dan tugasnya. Burung hantu, sebagai hewan yang aktif di malam hari, melambangkan kemampuan Densus 88 untuk beroperasi dalam situasi gelap dan kompleks, serta sebagai simbol kebijaksanaan dan pengamatan.." 
+    },
+    { 
+        n: 47, 
+        q: "Sistem penanggalan ini merupakan hasil perbaikan dari kalender sebelumnya. Perbaikan ini digagas Aloysius Lilius dan Napoli-Italia, yang kemudian disetujui seorang paus. Kalender ini dinamakan …", 
+        o: ["Kalender Gregorian", "Kalender Julian", "Kalender Hijriah", "Kalender Paulus", "Kalender Lilius"], 
+        a: 1, 
+        p: "Kalender Gregorius atau Kalender Gregorian adalah kalender yang sekarang paling banyak dipakai di Dunia Barat. Ini merupakan modifikasi Kalender Julius. Yang pertama kali mengusulkannya ialah Dr. Aloysius Lilius dari Napoli-Italia, dan disetujui oleh Paus Gregorius XIII, pada tanggal 24 Februari 1582. Penanggalan tahun kalender ini, berdasarkan tahun Masehi." 
+    },
+    { 
+        n: 48, 
+        q: "Sebuah cerpen dikatakan cerita pendek karena memiliki ciri...", 
+        o: ["Menggambarkan kisah nyata maupun khayalan", "Tidak dibukukan", "Tulisannya kurang dari 10.000 kata", "Ceritanya bisa bersambung", "Berfokus mengisahkan satu tokoh"], 
+        a: 3, 
+        p: "Ciri-Ciri Cerpen, Fokus Memusatkan diri pada satu situasi atau satu konflik utama, Panjang Ringkas, biasanya di bawah 10.000 kata. Karakter Penokohan tidak mendalam, terbatas pada tokoh utama. Waktu Baca, Dapat dibaca dalam satu waktu duduk (sekitar 10-30 menit).." 
+    },
+    { 
+        n: 49, 
+        q: "Di sebuah rumah tua di pinggir hutan, tinggallah seorang wanita bernama Laras. Setiap malam, ia mendengar suara bisikan dari cermin tua di kamarnya. Suara itu memanggil namanya, mengajaknya berbicara, dan bahkan menceritakan kisah-kisah masa lalu yang tidak pernah ia ketahui. Bayangan seorang wanita muncul di cermin mengaku sebagai neneknya yang terjebak karena kutukan keluarga. Bentuk simbolis dari cermin dalam cerita ini adalah …", 
+        o: ["alat untuk melihat masa depan.", "barang yang berkaitan dengan kutukan.", "penghubung antara dunia nyata dan dunia lain.", "tempat penyimpanan suatu fakta yang belum terungkap dan perlu diselesaikan.", "sebagai alat untuk mengungkap kebenaran."], 
+        a: 2, 
+        p: "Hal tersebut dinyatakan di dalam paragraf kedua kalimat terakhir cerita." 
+    },
+    { 
+        n: 50, 
+        q: "Pemerintah Indonesia membentuk tim khusus gabungan dari TNI dan Polri untuk menanggulangi aksi terorisme di kawasan Poso Sulawesi Tengah yang dinamakan dengan Operasi …", 
+        o: ["Madago Raya", "Trikora", "Seroja", "Mapenduma", "Woyla"], 
+        a: 1, 
+        p: "Operasi Madago Raya adalah operasi gabungan yang dilakukan oleh Kepolisian Negara Republik Indonesia dan Tentara Nasional Indonesia untuk menangkap anggota MIT." 
+    }
+];
+
+let currentIdx = 0;
+let answers = {};
+let timeLeft = 2400; 
+let timerInterval;
+let isFinished = false;
+
+function startQuiz() {
+    const nameInput = document.getElementById('userName').value.trim();
+    if(!nameInput){ alert('Masukkan nama!'); return; }
+    document.getElementById('start-screen').style.display='none';
+    document.getElementById('quiz-screen').style.display='block';
+    showQuestion();
+    renderGrid();
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+    if(isFinished) return;
+    let m = Math.floor(timeLeft/60);
+    let s = timeLeft%60;
+    document.getElementById('timer').innerText = `${m}:${s<10?'0'+s:s}`;
+    if(timeLeft<=0) finish();
+    timeLeft--;
+}
+
+function showQuestion() {
+    const item = soalData[currentIdx];
+    let html = `
+    <div class="question-box">
+        <h3>Soal No ${item.n} dari 50</h3>
+        <p style="font-size:18px; line-height:1.5;">${item.q}</p>
+        ${item.o.map((opt, i) => `
+            <div class="option ${answers[currentIdx] === i ? 'selected' : ''}" onclick="selectOpt(${i})">
+                <b style="margin-right:10px">${String.fromCharCode(65+i)}.</b> ${opt}
+            </div>
+        `).join('')}
+    </div>`;
+    document.getElementById('question-container').innerHTML = html;
+}
+
+function selectOpt(i) {
+    if(isFinished) return;
+    answers[currentIdx] = i;
+    showQuestion();
+    renderGrid();
+    if (currentIdx < soalData.length - 1) {
+        setTimeout(() => {
+            currentIdx++;
+            showQuestion();
+            renderGrid();
+        }, 400);
+    }
+}
+
+function renderGrid() {
+    let html = '';
+    soalData.forEach((_, i) => {
+        let cls = (i === currentIdx) ? 'active' : (answers[i] !== undefined ? 'answered' : '');
+        html += `<div class="nav-item ${cls}" onclick="jump(${i})">${i+1}</div>`;
+    });
+    document.getElementById('grid-nav').innerHTML = html;
+}
+
+function jump(i) { currentIdx = i; showQuestion(); renderGrid(); }
+function next() { if(currentIdx < soalData.length-1) jump(currentIdx+1); }
+function prev() { if(currentIdx > 0) jump(currentIdx-1); }
+
+function tryFinish() { if(confirm('Selesai?')) finish(); }
+
+function finish() {
+    isFinished = true;
+    clearInterval(timerInterval);
+    let benar = 0;
+    let review = '';
+    soalData.forEach((item, idx) => {
+        const userAns = answers[idx];
+        const isCorrect = userAns === item.a;
+        if(isCorrect) benar++;
+        review += `<div style="border-bottom:2px solid #eee; padding:20px 0;">
+            <p><b>SOAL NO ${item.n}</b></p>
+            <p>${item.q}</p>
+            <p>Jawaban Anda: ${userAns !== undefined ? String.fromCharCode(65+userAns) : '-'} ${isCorrect ? '✅' : '❌'}</p>
+            <p>Kunci: ${String.fromCharCode(65+item.a)}</p>
+            <div class="pembahasan-box"><b>PEMBAHASAN:</b><br>${item.p}</div>
+        </div>`;
+    });
+    document.getElementById('quiz-screen').style.display='none';
+    document.getElementById('result-screen').style.display='block';
+    document.getElementById('final-score').innerText = (benar * 2);
+    document.getElementById('display-name').innerText = document.getElementById('userName').value;
+    document.getElementById('review-area').innerHTML = review;
+    window.scrollTo(0,0);
+}
+
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    html2canvas(document.getElementById('result-screen')).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF();
+        pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+        pdf.save('Hasil_CAT_PU1.pdf');
+    });
+}
+</script>
+<footer style="text-align: center; padding: 20px; color: #7f8c8d; font-size: 0.8rem; border-top: 1px solid #eee; margin-top: 50px;">
+    Sistem CAT ini dikembangkan dan dibuat oleh <b>Persona Research & Consulting @2026</b>
+</footer>
+</body>
+</html>
